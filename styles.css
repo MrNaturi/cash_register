@@ -1,0 +1,71 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body{
+    background-color: #D3D3D3;
+  }
+  main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 40px 10px;
+    margin-top: 50px;
+
+  }
+  #container{
+    background-color: #07553B;
+    color: #CED46A;
+    display: flex;
+    padding: 40px;
+    border: #CED46A solid 4px;
+    border-radius: 15px;
+    transition: 2s;
+    gap: 10px;
+  }
+  #register{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    border-right: #CED46A solid 1px;
+    padding-right: 10px;
+  }
+  #cash{
+    display: block;
+  }
+  #change-drawer{
+    white-space: pre-line;
+  }
+  .change{
+    border: #D3D3D3 solid 2px;
+    border-radius: 15px;
+    padding: 10px;
+  }
+
+  #purchase-btn{
+    background-image: linear-gradient(to right, #3CA55C 0%, #B5AC49  51%, #3CA55C  100%);
+    margin: 10px;
+    padding: 10px  25px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: 3s;
+    background-size: 200% auto;
+    color: #CED46A;            
+    box-shadow: 0 0 20px #CED46A;
+    border-radius: 15px;
+    display: block;
+    border-color: #CED46A;
+  }
+
+  #purchase-btn:hover {
+    background-position: right center; /* change the direction of the change here */
+    color: #fff;
+    text-decoration: none;
+  }
+ 
