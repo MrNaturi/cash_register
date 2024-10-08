@@ -20,60 +20,82 @@ const cashDrawerDisplay = document.getElementById('change-drawer');
 const formatResults = (status, change) => {
   displayChangeDue.innerHTML = `<p>Status: ${status}</p>`;
   change.map(
-    money => (displayChangeDue.innerHTML += `<p>${money[0]}: $${money[1]}</p>`)
+    money => (displayChangeDue.innerHTML += `<p>${money[0]}: $${money[1].toFixed(2)}</p>`)
   );
-  return;
 };
 
 const checkCashRegister = () => {
-  if (Number(cash.value) < price) {
+  const cashValue = Number(cash.value);
+
+  if (cashValue < price) {
     alert('Customer does not have enough money to purchase the item');
     cash.value = '';
     return;
   }
 
-  if (Number(cash.value) === price) {
-    displayChangeDue.innerHTML =
-      '<p>No change due - customer paid with exact cash</p>';
+  if (cashValue === price) {
+    displayChangeDue.innerHTML = '<p>No change due - customer paid with exact cash</p>';
     cash.value = '';
     return;
   }
 
-  let changeDue = Number(cash.value) - price;
-  let reversedCid = [...cid].reverse();
+  let changeDue = cashValue - price;
+  let reversedCid = [...cid].reverse(); 
   let denominations = [100, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];
   let result = { status: 'OPEN', change: [] };
-  let totalCID = parseFloat(
-    cid
-      .map(total => total[1])
-      .reduce((prev, curr) => prev + curr)
-      .toFixed(2)
-  );
-
-  if (totalCID < changeDue) {
-    return (displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>');
-  }
+  let totalCID = parseFloat(cid.reduce((sum, item) => sum + item[1], 0).toFixed(2));
 
   if (totalCID === changeDue) {
-    result.status = 'CLOSED';
-  }
+    // Status closed, but only return the required change
+    for (let i = 0; i < reversedCid.length; i++) {
+      let coinName = reversedCid[i][0];
+      let coinTotal = reversedCid[i][1];
+      let coinValue = denominations[i];
+      let amountToReturn = 0;
 
-  for (let i = 0; i <= reversedCid.length; i++) {
-    if (changeDue >= denominations[i] && changeDue > 0) {
-      let count = 0;
-      let total = reversedCid[i][1];
-      while (total > 0 && changeDue >= denominations[i]) {
-        total -= denominations[i];
-        changeDue = parseFloat((changeDue -= denominations[i]).toFixed(2));
-        count++;
+      while (changeDue >= coinValue && coinTotal > 0) {
+        changeDue -= coinValue;
+        coinTotal -= coinValue;
+        amountToReturn += coinValue;
+        changeDue = parseFloat(changeDue.toFixed(2)); 
       }
-      if (count > 0) {
-        result.change.push([reversedCid[i][0], count * denominations[i]]);
+
+      if (amountToReturn > 0) {
+        result.change.push([coinName, amountToReturn]);
       }
     }
+    result.status = 'CLOSED';
+    formatResults(result.status, result.change);
+    updateUI(result.change);
+    return;
   }
+
+  if (totalCID < changeDue) {
+    displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>';
+    return;
+  }
+
+  for (let i = 0; i < reversedCid.length; i++) {
+    let coinName = reversedCid[i][0];
+    let coinTotal = reversedCid[i][1];
+    let coinValue = denominations[i];
+    let amountToReturn = 0;
+
+    while (changeDue >= coinValue && coinTotal > 0) {
+      changeDue -= coinValue;
+      coinTotal -= coinValue;
+      amountToReturn += coinValue;
+      changeDue = parseFloat(changeDue.toFixed(2)); 
+    }
+
+    if (amountToReturn > 0) {
+      result.change.push([coinName, amountToReturn]);
+    }
+  }
+
   if (changeDue > 0) {
-    return (displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>');
+    displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>';
+    return;
   }
 
   formatResults(result.status, result.change);
@@ -99,6 +121,7 @@ const updateUI = change => {
     TWENTY: 'Twenties',
     "ONE HUNDRED": 'Hundreds',
   };
+  
   if (change) {
     change.forEach(changeArr => {
       const targetArr = cid.find(cidArr => cidArr[0] === changeArr[0]);
@@ -108,9 +131,9 @@ const updateUI = change => {
 
   cash.value = '';
   priceScreen.textContent = `Total: $${price}`;
-  cashDrawerDisplay.innerHTML = `<p><strong>Change in drawer:</strong></p>
+  cashDrawerDisplay.innerHTML = `
     ${cid
-      .map(money => `<p>${currencyNameMap[money[0]]}: $${money[1]}</p>`)
+      .map(money => `<p>${currencyNameMap[money[0]]}: $${money[1].toFixed(2)}</p>`)
       .join('')}  
   `;
 };
