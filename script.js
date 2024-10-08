@@ -1,4 +1,4 @@
-let price = 1.87;
+let price = 3.26;
 let cid = [
   ['PENNY', 1.01],
   ['NICKEL', 2.05],
@@ -10,62 +10,117 @@ let cid = [
   ['TWENTY', 60],
   ['ONE HUNDRED', 100]
 ];
-const denoms = [
-  ['PENNY', 0.01],
-  ['NICKEL', 0.05],
-  ['DIME', 0.1],
-  ['QUARTER', 0.25],
-  ['ONE', 1],
-  ['FIVE', 5],
-  ['TEN', 10],
-  ['TWENTY', 20],
-  ['ONE HUNDRED', 100]
-]
-const priceText = document.getElementById("price")
-const purchaseBtn = document.getElementById("purchase-btn")
-const changeDue = document.getElementById("change-due")
-const changeDrawer = document.getElementById("change-drawer")
 
-const cashList = () => {
-  changeDrawer.innerHTML = '';
-  cid.forEach(item => {
-    const p = document.createElement("p")
-    p.innerText = `${item[0]}: $${item[1].toFixed(2)}`
-    changeDrawer.appendChild(p)
-  });
-}
-cashList()
-priceText.innerText = price;
+const displayChangeDue = document.getElementById('change-due');
+const cash = document.getElementById('cash');
+const purchaseBtn = document.getElementById('purchase-btn');
+const priceScreen = document.getElementById('price-screen');
+const cashDrawerDisplay = document.getElementById('change-drawer');
 
-const calcChange = () => {
-  const inputVal = document.getElementById("cash").value;
-  const cashAmount = parseFloat(inputVal);
-  
-  if (cashAmount < price) {
-    alert("Customer does not have enough money to purchase the item");
+const formatResults = (status, change) => {
+  displayChangeDue.innerHTML = `<p>Status: ${status}</p>`;
+  change.map(
+    money => (displayChangeDue.innerHTML += `<p>${money[0]}: $${money[1]}</p>`)
+  );
+  return;
+};
+
+const checkCashRegister = () => {
+  if (Number(cash.value) < price) {
+    alert('Customer does not have enough money to purchase the item');
+    cash.value = '';
     return;
-  } else if (cashAmount === price) {
-    changeDue.innerText = "No change due - customer paid with exact cash";
-    return;
-  } else {
-    let calculatedChange = cashAmount - price;
-    changeDue.innerText = `$${calculatedChange.toFixed(2)}`;
-    
-    const result = [];
-    
-    for (let i = denoms.length - 1; i >= 0; i--) {
-      const denomName = denoms[i][0];
-      const denomValue = denoms[i][1];
-      
-      while (calculatedChange >= denomValue) {
-        result.push(`${denomName} = $${denomValue}`);
-        calculatedChange -= denomValue;
+  }
 
+  if (Number(cash.value) === price) {
+    displayChangeDue.innerHTML =
+      '<p>No change due - customer paid with exact cash</p>';
+    cash.value = '';
+    return;
+  }
+
+  let changeDue = Number(cash.value) - price;
+  let reversedCid = [...cid].reverse();
+  let denominations = [100, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01];
+  let result = { status: 'OPEN', change: [] };
+  let totalCID = parseFloat(
+    cid
+      .map(total => total[1])
+      .reduce((prev, curr) => prev + curr)
+      .toFixed(2)
+  );
+
+  if (totalCID < changeDue) {
+    return (displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>');
+  }
+
+  if (totalCID === changeDue) {
+    result.status = 'CLOSED';
+  }
+
+  for (let i = 0; i <= reversedCid.length; i++) {
+    if (changeDue >= denominations[i] && changeDue > 0) {
+      let count = 0;
+      let total = reversedCid[i][1];
+      while (total > 0 && changeDue >= denominations[i]) {
+        total -= denominations[i];
+        changeDue = parseFloat((changeDue -= denominations[i]).toFixed(2));
+        count++;
+      }
+      if (count > 0) {
+        result.change.push([reversedCid[i][0], count * denominations[i]]);
       }
     }
-    console.log(result);
-    cashList()
   }
-}
+  if (changeDue > 0) {
+    return (displayChangeDue.innerHTML = '<p>Status: INSUFFICIENT_FUNDS</p>');
+  }
 
-purchaseBtn.addEventListener("click", calcChange);
+  formatResults(result.status, result.change);
+  updateUI(result.change);
+};
+
+const checkResults = () => {
+  if (!cash.value) {
+    return;
+  }
+  checkCashRegister();
+};
+
+const updateUI = change => {
+  const currencyNameMap = {
+    PENNY: 'Pennies',
+    NICKEL: 'Nickels',
+    DIME: 'Dimes',
+    QUARTER: 'Quarters',
+    ONE: 'Ones',
+    FIVE: 'Fives',
+    TEN: 'Tens',
+    TWENTY: 'Twenties',
+    "ONE HUNDRED": 'Hundreds',
+  };
+  if (change) {
+    change.forEach(changeArr => {
+      const targetArr = cid.find(cidArr => cidArr[0] === changeArr[0]);
+      targetArr[1] = parseFloat((targetArr[1] - changeArr[1]).toFixed(2));
+    });
+  }
+
+  cash.value = '';
+  priceScreen.textContent = `Total: $${price}`;
+  cashDrawerDisplay.innerHTML = `<p><strong>Change in drawer:</strong></p>
+    ${cid
+      .map(money => `<p>${currencyNameMap[money[0]]}: $${money[1]}</p>`)
+      .join('')}  
+  `;
+};
+
+purchaseBtn.addEventListener('click', checkResults);
+
+cash.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    checkResults();
+  }
+});
+
+updateUI();
